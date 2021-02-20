@@ -23,23 +23,56 @@
         <div id="darkbannerwrap"></div>
         
         <form method="post" class="layui-form" >
-            <input name="username" placeholder="用户名"  type="text" lay-verify="required" class="layui-input" >
+            <input id="username" name="username" placeholder="用户名"  type="text" lay-verify="required" class="layui-input" >
             <hr class="hr15">
-            <input name="password" lay-verify="required" placeholder="密码"  type="password" class="layui-input">
+            <input id="password" name="password" lay-verify="required" placeholder="密码"  type="password" class="layui-input">
             <hr class="hr15">
             <div>
-                <input placeholder="yanzhen" type="text" class="layui-input" style="width: 180px;float: left"> </input>
+                <input  id="captach_input" placeholder="yanzhen" type="text" class="layui-input" style="width: 180px;float: left"> </input>
                 <img id="captcha_img"  style="width: 140px;height: 50px;float: right"/>
+                <input id="img_id" type="hidden" class="layui-input" style="width: 180px;float: left"> </input>
             </div>
             <hr class="hr15">
-            <input value="登录" lay-submit lay-filter="login" style="width:100%;" type="submit">
+            <input value="登录" lay-submit lay-filter="login" style="width:100%;" type="button" id="btn_submit">
             <hr class="hr20" >
         </form>
     </div>
 
     <script>
         var base64={{.captcha.Base64}};
-        document.getElementById("captcha_img").setAttribute("src",base64)
+        var Id={{.captcha.Id}};
+        console.log(Id)
+        document.getElementById("captcha_img").setAttribute("src",base64);
+        document.getElementById("img_id").setAttribute("value",Id)
+
+
+        var img_btn=document.getElementById("captcha_img");
+        img_btn.onclick=function(ex){
+          $.ajax({
+            url:"/refresh_captcha",
+              date:{},
+              type:"GET",
+              success:function (data) {
+                  var _errCode=data["Code"];
+                  if (_errCode ==200)
+                  {
+                      var _base64=data["Base64"];
+                      var _id=data["Id"];
+                      document.getElementById("img_id").setAttribute("value",_id);
+
+                      document.getElementById("captcha_img").setAttribute("src",_base64);
+
+                  }else{
+                        console.log(_errCode)
+                  }
+
+              },
+              fail:function (data) {
+
+              }
+          })
+        };
+
         $(function  () {
             layui.use('form', function(){
               var form = layui.form;
@@ -48,11 +81,33 @@
               //   });
               //监听提交
               form.on('submit(login)', function(data){
-                // alert(888)
-                layer.msg(JSON.stringify(data.field),function(){
-                    location.href='index.html'
-                });
-                return false;
+                var _userName=document.getElementById("username").value;
+                var password=document.getElementById("password").value;
+                var captach_input=document.getElementById("captach_input").value;
+                var img_id=document.getElementById("img_id").value;
+                alert(_userName);
+                $.ajax({
+                    url:"/",
+                    type:"POST",
+                    data:{
+                        "username":_userName,
+                        "password":password,
+                        "captch":captach_input,
+                        "captcha_id":img_id
+                    },
+                    success:function (data) {
+                        alert(data);
+                        var code =data["code"];
+                        if (code == 200){
+                            window.location.href="www.baidu.com"
+                        }else {
+                            alert(data["msg"])
+                        }
+                    },
+                    fail:function (data) {
+                        alert(data);
+                    }
+                })
               });
             });
         })

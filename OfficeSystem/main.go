@@ -1,12 +1,11 @@
 package main
 
 import (
+	_ "OfficeSystem/models"
 	_ "OfficeSystem/routers"
-	_"OfficeSystem/models"
-	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
-	_"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func init()  {
@@ -20,7 +19,9 @@ func init()  {
 	dateSouce :=userName+":"+pwd+"@tcp("+host+":"+port+")/"+db+"?charset=utf8"
 	orm.RegisterDriver("mysql",orm.DRMySQL)
 	orm.RegisterDataBase("default","mysql",dateSouce)
-	fmt.Println(dateSouce)
+
+	beego.BConfig.WebConfig.Session.SessionOn = true
+	beego.BConfig.WebConfig.Session.SessionGCMaxLifetime=300
 	//orm.RegisterModel(new(user.User))
 	//orm.RegisterDriver("mysql", orm.DRMySQL)
 	//orm.RegisterDataBase("default", "mysql", "root:123456@/test?charset=utf8")
@@ -29,6 +30,7 @@ func init()  {
 
 func main() {
 	orm.RunCommand()
+
 	beego.Run()
 }
 
