@@ -46,7 +46,8 @@ func (t *LoginController)Post()  {
 	fmt.Println(username,password,captch,captcha_id)
 	captcha_ok:= utils.VerifyCaptcha(captch,captcha_id)
 
-	paw_md5 :=utils.GetMd5(password)
+	//paw_md5 :=utils.GetMd5(password)
+	paw_md5:=password
 	o :=orm.NewOrm()
 	ret_map :=map[string]interface{}{}
 

@@ -85,7 +85,6 @@
                 var password=document.getElementById("password").value;
                 var captach_input=document.getElementById("captach_input").value;
                 var img_id=document.getElementById("img_id").value;
-                alert(_userName);
                 $.ajax({
                     url:"/",
                     type:"POST",
@@ -96,10 +95,9 @@
                         "captcha_id":img_id
                     },
                     success:function (data) {
-                        alert(data);
                         var code =data["code"];
                         if (code == 200){
-                            window.location.href="www.baidu.com"
+                            window.location.href="/index"
                         }else {
                             alert(data["msg"])
                         }
