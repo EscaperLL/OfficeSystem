@@ -13,7 +13,13 @@ type User struct {
 	Gender bool`orm:"null;description(性别)"`
 	Phone int64`orm:"null;description(电话)"`
 	Addr string`orm:"null";size(255);description(住址)`
+	IsActive bool`orm:description(是否启用 0 man );default(0)`
 	CrateTime time.Time `orm:"null;auto_now;type(datetime);description(创建时间)"`
+}
+
+type Gender struct {
+	Id int `orm:"pk;auto"`
+	Description string `orm:"size(64);description(sex)"`
 }
 
 func (t *User)TableName()string  {
@@ -22,4 +28,5 @@ func (t *User)TableName()string  {
 
 func init()  {
 	orm.RegisterModel(new(User))
+	orm.RegisterModel(new(Gender))
 }

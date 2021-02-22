@@ -1,7 +1,6 @@
 package main
 
 import (
-	"OfficeSystem/controllers"
 	_ "OfficeSystem/models"
 	_ "OfficeSystem/routers"
 	"github.com/astaxie/beego"
@@ -31,7 +30,7 @@ func init()  {
 
 func main() {
 	orm.RunCommand()
-	beego.InsertFilter("/index/*",beego.BeforeRouter,controllers.LoginFilter)
+	//beego.InsertFilter("/index/*",beego.BeforeRouter,controllers.LoginFilter)
 	beego.Run()
 }
 
