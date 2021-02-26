@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
+	"strconv"
+	"time"
 )
 
 type UserController struct {
@@ -57,6 +59,73 @@ func (t *UserController)Get()  {
 	t.TplName="user/member-list.html"
 }
 
-func (t *UserController)Add()  {
+func (t *UserController)ToAdd()  {
 	t.TplName="user/member-add.html"
+}
+
+func (t *UserController)DoAdd()  {
+	username :=t.GetString("username")
+	password :=t.GetString("password")
+	tem_phone :=t.GetString("phone")
+	phone,_ :=strconv.ParseInt(tem_phone,10,64)
+	addr :=t.GetString("addr")
+	age,_ :=t.GetInt("age")
+	gender,_ :=t.GetInt("gender")
+	gender_input :=true
+	if gender==1{
+		gender_input=true
+	}else {
+		gender_input=false
+	}
+	active,_ :=t.GetInt("is_active")
+	is_active :=false
+	if active >0{
+		is_active = true
+	}else {
+		is_active = false
+	}
+	o :=orm.NewOrm()
+
+	user_model :=user.User{Age: age,
+		UserName: username,
+	Pass: password,
+	Phone: phone,
+	Addr: addr,
+	Gender: gender_input,
+	IsActive: is_active,
+	CrateTime: time.Now(),
+	}
+	_,err :=o.Insert(&user_model)
+	result_map :=map[string]interface{}{}
+	if err != nil {
+		result_map["code"]=201
+		result_map["msg"]="insert failed"
+		fmt.Println(err)
+	}else {
+		result_map["code"]=200
+		result_map["msg"]="insert success"
+		fmt.Println(err)
+	}
+	t.Data["json"]=result_map
+	t.ServeJSON()
+}
+
+func (t *UserController)SetActive()  {
+	id:= t.GetString("is_active_id")
+	is_active := t.GetString("is_active")
+	fmt.Println("set active",id,is_active)
+	o := orm.NewOrm()
+	qs:= o.QueryTable("sys_user")
+	_,err :=qs.Filter("id",id).Update(
+		orm.Params{"is_active":is_active})
+	result_map :=map[string]interface{}{}
+	if err !=nil {
+		result_map["code"]=10002
+		result_map["msg"] ="insert failed"
+	}else {
+		result_map["code"]=10002
+		result_map["msg"] ="insert success"
+	}
+	t.Data["json"] = result_map
+	t.ServeJSON()
 }
