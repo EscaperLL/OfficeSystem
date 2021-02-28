@@ -37,7 +37,7 @@
       </div>
       <xblock>
         <button class="layui-btn layui-btn-danger" onclick="delAll()"><i class="layui-icon"></i>批量删除</button>
-        <button class="layui-btn" onclick="x_admin_show('添加用户','{{urlfor "UserController.Add"}}',600,400)"><i class="layui-icon"></i>添加</button>
+        <button class="layui-btn" onclick="x_admin_show('添加用户','{{urlfor "UserController.ToAdd"}}',600,400)"><i class="layui-icon"></i>添加</button>
         <span class="x-right" style="line-height:40px">共有数据：{{.Count}} 条</span>
       </xblock>
       <table class="layui-table">
@@ -72,6 +72,7 @@
             <td>{{.Addr}}</td>
             <td>{{date .CrateTime "Y-m-d H:m:s"}}</td>
             <td class="td-status">
+              <input type="hidden" id="is_active_id" value="{{.IsActive}}">
               {{if  .IsActive }}
                 <span class="layui-btn layui-btn-normal layui-btn-mini">已启用</span></td>
               {{else}}
@@ -79,11 +80,11 @@
               {{end}}
             <td class="td-manage">
               {{if  .IsActive }}
-                <a onclick="member_stop(this,'10001')" href="javascript:;"  title="停用">
+                <a onclick="member_stop(this,{{.Id}})" href="javascript:;"  title="停用">
                   <i class="layui-icon">&#xe601;</i>
                 </a>
               {{else}}
-                <a onclick="member_stop(this,'10001')" href="javascript:;"  title="启用">
+                <a onclick="member_stop(this,{{.Id}})" href="javascript:;"  title="启用">
                   <i class="layui-icon">&#xe601;</i>
                 </a>
               {{end}}
@@ -141,12 +142,36 @@
         });
       });
 
+      function set_active(id,enable_active) {
+        $.ajax({
+          url:"{{urlfor  "UserController.SetActive"}}",
+          type:"POST",
+          data:{
+            "is_active_id":id,
+            "is_active":enable_active
+          },
+          success:function (data) {
+              ions_alert.alertSuccessToast(data["msg"]);
+              setTimeout(reloead_list,2000);
+          },
+          fail:function (data) {
+
+          }
+        })
+      }
+
+      function reloead_list() {
+          window.location.href="{{urlfor "UserController.Get"}}";
+      }
+
        /*用户-停用*/
       function member_stop(obj,id){
+        alert(id);
           layer.confirm('确认要停用吗？',function(index){
 
               if($(obj).attr('title')=='启用'){
 
+                set_active(id,obj.value);
                 //发异步把用户状态进行更改
                 $(obj).attr('title','停用')
                 $(obj).find('i').html('&#xe62f;');
@@ -155,6 +180,7 @@
                 layer.msg('已停用!',{icon: 5,time:1000});
 
               }else{
+                set_active(id,obj.value);
                 $(obj).attr('title','启用')
                 $(obj).find('i').html('&#xe601;');
 
