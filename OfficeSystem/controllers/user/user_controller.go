@@ -3,10 +3,14 @@ package user
 import (
 	"OfficeSystem/models/user"
 	"OfficeSystem/utils"
+	"context"
 	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
+	"github.com/pkg/errors"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -128,4 +132,196 @@ func (t *UserController)SetActive()  {
 	}
 	t.Data["json"] = result_map
 	t.ServeJSON()
+}
+
+func (t *UserController)Delete_one()  {
+	delete_id :=t.GetString("delete_id")
+
+	result_map :=map[string]interface{}{}
+	o := orm.NewOrm()
+	//o.QueryTable("sys_user").Filter("id")
+	fmt.Println("start delete")
+	err:=o.Begin()
+	var errcode int
+	var err_msg string
+	if err !=nil {
+		errcode=10001
+		err_msg = "start transacation failed"
+
+		t.Data["json"] = result_map
+		t.ServeJSON()
+		fmt.Println(" transaction",err)
+	}else {
+		_,err1:=o.Raw("delete from sys_user where id = ?",delete_id).Exec()
+		if err1 ==nil {
+			err1 = o.Commit()
+		}
+		if err1 ==nil {
+			errcode=200
+			err_msg = "delete  success"
+		}else {
+			errcode=10002
+			err_msg = "delete  failed"
+			o.Rollback()
+			fmt.Println(" Rollback",err1)
+		}
+	}
+	result_map["code"] = errcode
+	result_map["msg"] = err_msg
+
+	t.Data["json"] = result_map
+	t.ServeJSON()
+}
+
+func lineListSource(ctx context.Context,lines ...string)  (<-chan string,<-chan error,error){
+	if len(lines) ==0{
+		return nil,nil,errors.Errorf("no lines provided")
+	}
+	out :=make(chan string)
+	errc :=make(chan error,1)
+	go func() {
+		defer close(out)
+		defer close(errc)
+		for lineIndex,line :=range lines{
+			if line ==""{
+				errc <- errors.Errorf("line %v is empty",lineIndex+1)
+				return
+			}
+			select {
+			case out <-line:
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out,errc,nil
+}
+
+func lineParser(ctx context.Context,base int,in <- chan string)(<-chan int64,<-chan error,error)  {
+	if base < 2{
+		return nil,nil,errors.Errorf("invalid base %v",base)
+	}
+	out :=make(chan int64)
+	errc :=make(chan error,1)
+	go func() {
+		defer close(out)
+		defer close(errc)
+		for line := range in{
+			n,err :=strconv.ParseInt(line,base,64)
+			if err !=nil {
+				errc <-err
+				return
+			}
+			select {
+			case out<-n:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out,errc,nil
+}
+
+func runPipeline(base int,lines []string)error  {
+	ctx,cencel_fun:=context.WithCancel(context.Background())
+	defer cencel_fun()
+	var errList []<-chan error
+	linec,errc,err :=lineListSource(ctx,lines...)
+	errList=append(errList,errc)
+	if err !=nil{
+		return err
+	}
+	numberc,errc,err :=lineParser(ctx,base,linec)
+	if err !=nil{
+		return err
+	}
+	errList=append(errList,errc)
+
+	errc,err =sink(ctx,numberc)
+	if err !=nil {
+		return err
+	}
+	errList=append(errList,errc)
+	return waitForPipeLine(errList...)
+}
+
+func mergeErrors(cs ...<-chan error)<-chan error  {
+	var wg sync.WaitGroup
+	out := make(chan error,len(cs))
+
+	output := func(c <-chan error) {
+		for n := range c{
+			out <-n
+		}
+		wg.Done()
+	}
+	wg.Add(len(cs))
+	for _,c:=range cs{
+		go output(c)
+	}
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
+}
+
+func waitForPipeLine(errs ...<-chan error)error  {
+	errc :=mergeErrors(errs...)
+	for err := range errc{
+		if err !=nil {
+			return err
+
+		}
+	}
+	return nil
+}
+
+func sink(ctx context.Context,in <-chan int64)(<-chan error,error)  {
+	errc :=make(chan error,1)
+	go func() {
+		defer close(errc)
+		//
+
+		o := orm.NewOrm()
+		qs :=o.QueryTable("sys_user")
+		for n := range in{
+			//delete user
+			_,err:=qs.Filter("id",n).Delete()
+			if err!=nil {
+				errc<-err
+			}
+		}
+	}()
+	return errc,nil
+}
+
+
+
+func (t *UserController)Muti_Delete()  {
+
+	ids :=t.GetString("delete_ids")
+	fmt.Println("1111111111",ids)
+	//var str_ids []string
+
+
+	id_arr :=strings.Split(ids,",")
+
+	err := runPipeline(10,id_arr)
+	ret_map :=map[string]interface{}{}
+	var ret_code int
+	var ret_msg string
+	if err!=nil {
+		ret_code=10001
+		ret_msg="delete mult err"
+	}else {
+		ret_code=200
+		ret_msg="delete mult success"
+	}
+	ret_map["code"]=ret_code
+	ret_map["msg"]=ret_msg
+	t.Data["json"]=ret_map
+	t.ServeJSON()
+
 }

@@ -46,18 +46,22 @@ func (t *LoginController)Post()  {
 	fmt.Println(username,password,captch,captcha_id)
 	captcha_ok:= utils.VerifyCaptcha(captch,captcha_id)
 
+	user_data := user.User{}
 	//paw_md5 :=utils.GetMd5(password)
 	paw_md5:=password
 	o :=orm.NewOrm()
 	ret_map :=map[string]interface{}{}
-
+	o.QueryTable("sys_user").Filter("user_name",username).Filter("pass",paw_md5).One(&user_data)
 	if !o.QueryTable("sys_user").Filter("user_name",username).Filter("pass",paw_md5).Exist(){
 		ret_map["code"]=10001
 		ret_map["msg"]="username err or password err"
 	}else if !captcha_ok{
 		ret_map["code"]=10002
 		ret_map["msg"]="captcha err"
-	}else {
+	}else if! user_data.IsActive{
+		ret_map["code"]=10002
+		ret_map["msg"]="user not enabled"
+	} else {
 		user :=user.User{}
 		o.QueryTable("sys_user").Filter("user_name",username).Filter("pass",paw_md5).One(&user)
 		t.SetSession("user_id",user.Id)

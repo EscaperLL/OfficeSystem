@@ -20,5 +20,7 @@ func init() {
     beego.Router("/index/user/to_add", &user.UserController{},"get:ToAdd")
     beego.Router("/index/user/do_add", &user.UserController{},"post:DoAdd")
     beego.Router("/index/user/set_active", &user.UserController{},"post:SetActive")
+    beego.Router("/index/user/delete_one", &user.UserController{},"post:Delete_one")
+    beego.Router("/index/user/delete_muti", &user.UserController{},"post:Muti_Delete")
 
 }
