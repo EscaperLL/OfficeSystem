@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"reflect"
+	"time"
 	"unsafe"
 )
 
@@ -35,4 +36,9 @@ func GetMd5(input string)string  {
 	fmt.Println("md5",result)
 	result_str :=string(result[:])
 	return  result_str
+}
+
+func GetDateTimeStr()  string{
+	now:= time.Now()
+	return fmt.Sprintf("%d-%d-%d %d:%d:%d   ",now.Year(),now.Month(),now.Day(),now.Hour(),now.Minute(),now.Second())
 }

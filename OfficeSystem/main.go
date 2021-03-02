@@ -4,6 +4,7 @@ import (
 	_ "OfficeSystem/models"
 	_ "OfficeSystem/routers"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -31,6 +32,8 @@ func init()  {
 func main() {
 	orm.RunCommand()
 	//beego.InsertFilter("/index/*",beego.BeforeRouter,controllers.LoginFilter)
+	logs.SetLogger(logs.AdapterMultiFile,`{"filename":"logs/off.log","separate":["error","info"]}`)
+
 	beego.Run()
 }
 

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	"github.com/pkg/errors"
 	"strconv"
@@ -51,7 +52,9 @@ func (t *UserController)Get()  {
 	o.Raw("SELECT a.*,b.gender FROM sys_user a LEFT JOIN sys_gender b ON a.gender=b.id limit ? offset ?",limit,(page-1)*limit).QueryRows(&users)
 
 	page_map := utils.Paginator(page,limit,userCount)
-
+	{
+		logs.Info(fmt.Sprintf("[%s] url:%s Count:%d current:%d",utils.GetDateTimeStr(),t.Ctx.Request.URL,userCount,page))
+	}
 	t.Data["users"]=users
 	t.Data["prePage"] = prePage
 	t.Data["nextPage"] = nextPage
@@ -76,6 +79,9 @@ func (t *UserController)DoAdd()  {
 	age,_ :=t.GetInt("age")
 	gender,_ :=t.GetInt("gender")
 	gender_input :=true
+	{
+		logs.Info(fmt.Sprintf("[%s] url:%s username:%s",utils.GetDateTimeStr(),t.Ctx.Request.URL,username))
+	}
 	if gender==1{
 		gender_input=true
 	}else {
@@ -104,11 +110,11 @@ func (t *UserController)DoAdd()  {
 	if err != nil {
 		result_map["code"]=201
 		result_map["msg"]="insert failed"
-		fmt.Println(err)
+		logs.Error(fmt.Sprintf("[%s] url:%s username:%s faied err:%v",utils.GetDateTimeStr(),t.Ctx.Request.URL,username,err))
 	}else {
 		result_map["code"]=200
 		result_map["msg"]="insert success"
-		fmt.Println(err)
+		logs.Error(fmt.Sprintf("[%s] url:%s username:%s insert success",utils.GetDateTimeStr(),t.Ctx.Request.URL))
 	}
 	t.Data["json"]=result_map
 	t.ServeJSON()
@@ -151,6 +157,9 @@ func (t *UserController)Delete_one()  {
 		t.Data["json"] = result_map
 		t.ServeJSON()
 		fmt.Println(" transaction",err)
+		{
+			logs.Error(fmt.Sprintf("[%s] url:%s start transacation failed:%v id =%d",utils.GetDateTimeStr(),t.Ctx.Request.URL,err,delete_id))
+		}
 	}else {
 		_,err1:=o.Raw("delete from sys_user where id = ?",delete_id).Exec()
 		if err1 ==nil {
@@ -164,6 +173,7 @@ func (t *UserController)Delete_one()  {
 			err_msg = "delete  failed"
 			o.Rollback()
 			fmt.Println(" Rollback",err1)
+			logs.Error(fmt.Sprintf("[%s] url:%s  Rollback:%v id =%d",utils.GetDateTimeStr(),t.Ctx.Request.URL,err1,delete_id))
 		}
 	}
 	result_map["code"] = errcode
@@ -302,7 +312,6 @@ func sink(ctx context.Context,in <-chan int64)(<-chan error,error)  {
 func (t *UserController)Muti_Delete()  {
 
 	ids :=t.GetString("delete_ids")
-	fmt.Println("1111111111",ids)
 	//var str_ids []string
 
 
@@ -315,9 +324,11 @@ func (t *UserController)Muti_Delete()  {
 	if err!=nil {
 		ret_code=10001
 		ret_msg="delete mult err"
+		logs.Error(fmt.Sprintf("[%s] url:%s mutiDelete failed delete_ids =%v err:%v",utils.GetDateTimeStr(),t.Ctx.Request.URL,ids,err))
 	}else {
 		ret_code=200
 		ret_msg="delete mult success"
+		logs.Error(fmt.Sprintf("[%s] url:%s mutiDelete success delete_ids =%v ",utils.GetDateTimeStr(),t.Ctx.Request.URL,ids))
 	}
 	ret_map["code"]=ret_code
 	ret_map["msg"]=ret_msg
