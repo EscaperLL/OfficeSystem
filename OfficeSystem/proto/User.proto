@@ -1,0 +1,42 @@
+syntax="proto3";
+
+package go.micro.service.mic_srv_office;
+
+service IUserService {
+rpc GetUsers(Users) returns ( Reply) {}
+rpc GetUserByID(UserIDs) returns (User) {}
+rpc SetUser(User) returns (Reply) {}
+rpc SetUsers(Users) returns (Reply) {}
+rpc DelUser(UserIDs) returns (Reply) {}
+}
+
+message UserIDs{
+repeated int32 ID=1;
+}
+
+message User {
+int32 ID=1;
+string UserName=2;
+string Pass=3;
+int32 Age=4;
+int32 Gender=5;
+int64 PhoneNum=6;
+string Addr=7;
+int32 IsActive=8;
+string CreateTime=9;
+}
+
+message Reply {
+int32 code=1;
+string msg=2;
+}
+
+message Users {
+repeated User usersInfo=1;
+}
+
+message UserFilter{
+int32 ID=1;
+string UserName=2;
+}
+
